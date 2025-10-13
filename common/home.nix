@@ -79,6 +79,7 @@
       tfp = "terraform plan";
       tfa = "terraform apply --auto-approve";
       k = "kubectl";
+      rebuild = "sudo nix run nix-darwin -- switch --flake ~/.config/nix";
     };
 
     initExtra = ''
