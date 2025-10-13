@@ -15,7 +15,6 @@
     tenv
     tree
     nerd-fonts.caskaydia-mono
-    ollama
   ];
   
   fonts = {
