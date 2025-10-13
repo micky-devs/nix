@@ -16,7 +16,6 @@
     '';
   };
 
-  services.ollama.enable = true;
 
   programs.ghostty = {
     enable = true;

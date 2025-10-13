@@ -25,12 +25,21 @@ nix/
 
 ### Prerequisites
 
-1. Install Nix on the new machine:
+1. Install Homebrew:
+   ```bash
+   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+   ```
+
+   Follow the post-installation instructions to add Homebrew to your PATH, then restart your terminal.
+
+2. Install Nix on the new machine:
    ```bash
    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
    ```
 
-2. Ensure your hostname is correct:
+   **IMPORTANT**: When asked "Install Determinate Nix?", answer **NO** to use the official NixOS Nix instead. Determinate Nix conflicts with nix-darwin installation.
+
+3. Ensure your hostname is correct:
    ```bash
    scutil --get ComputerName
    scutil --get LocalHostName
@@ -55,12 +64,18 @@ nix/
    rsync -av ~/.config/nix/ micky-mac-air:~/.config/nix/
    ```
 
-2. Install nix-darwin:
+2. Back up the default macOS shell configuration files:
    ```bash
-   nix run nix-darwin -- switch --flake ~/.config/nix#micky-mac-air
+   sudo mv /etc/zshrc /etc/zshrc.before-nix-darwin
+   sudo mv /etc/zprofile /etc/zprofile.before-nix-darwin
    ```
 
-3. After the initial setup, you can use the rebuild alias:
+3. Install nix-darwin (the flake will automatically detect your hostname):
+   ```bash
+   nix run nix-darwin -- switch --flake ~/.config/nix
+   ```
+
+4. After the initial setup, you can use the rebuild alias:
    ```bash
    rebuild
    ```
@@ -70,10 +85,10 @@ nix/
 For reference, here's how micky-mac-1 was set up:
 
 ```bash
-sudo nix run nix-darwin -- switch --flake ~/.config/nix#micky-mac-1
+nix run nix-darwin -- switch --flake ~/.config/nix
 ```
 
-Then use the `rebuild` alias for future updates.
+The flake automatically detects the hostname and applies the correct configuration. Then use the `rebuild` alias for future updates.
 
 ## Making Changes
 
@@ -156,20 +171,27 @@ To keep both machines in sync:
 ## Adding a Third Machine
 
 1. Create a new directory: `machines/new-hostname/`
-2. Copy the darwin.nix and home.nix from an existing machine
-3. Update the rebuild alias in `home.nix`
-4. Add the configuration to `flake.nix`:
+2. Copy the darwin.nix and home.nix from an existing machine (they can be mostly empty)
+3. Add the hostname to the `machines` list in `flake.nix`:
    ```nix
-   new-hostname = darwin.lib.darwinSystem {
-     system = "aarch64-darwin";
-     modules = [
-       ./machines/new-hostname/darwin.nix
-       home-manager.darwinModules.home-manager
-       {
-         home-manager.useGlobalPkgs = true;
-         home-manager.useUserPackages = true;
-         home-manager.users.micky = import ./machines/new-hostname/home.nix;
-       }
-     ];
-   };
+   machines = [ "micky-mac-1" "micky-mac-air" "new-hostname" ];
    ```
+4. Run the same installation command on the new machine - it will automatically detect the hostname and apply the correct configuration
+
+## Troubleshooting Installation Issues
+
+### If You Accidentally Installed Determinate Nix
+
+If you installed Determinate Nix by mistake (answered "yes" to the Determinate Nix question), uninstall it first:
+
+```bash
+/nix/nix-installer uninstall
+```
+
+Then reinstall with the official version:
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
+```
+
+Answer **NO** when asked about Determinate Nix.
