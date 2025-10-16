@@ -6,5 +6,10 @@
     ../../common/darwin.nix
   ];
 
+  homebrew = {
+    casks = [
+      "claude"
+    ];
+  };
   # Add machine-specific system packages, homebrew casks, or settings here if needed
 }
