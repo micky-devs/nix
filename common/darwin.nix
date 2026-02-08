@@ -1,6 +1,7 @@
 { pkgs, ... }: {
   nixpkgs.config.allowUnfree = true;
   system.stateVersion = 6;
+  system.primaryUser = "micky";
 
   # Disable natural scrolling
   system.defaults.NSGlobalDomain."com.apple.swipescrolldirection" = false;
@@ -36,7 +37,7 @@
       "plex"
       "jumpcut"
       "raspberry-pi-imager"
-      "bitwarden"
+      #"bitwarden" was failing for some reason and only working on app store??
       "thunderbird"
       "obsidian"
       "whatsapp"
@@ -46,6 +47,9 @@
       "mullvad-vpn"
     ];
     brews = [
+      "colima"
+      "redis"
+      "atmos"
       "nvm"
       "asitop"
       "go"
@@ -76,6 +80,8 @@
       "uv"
       "gnupg"
       "lima"
+      "socket_vmnet"
+      "helmfile"
     ];
     onActivation = {
       cleanup = "zap";

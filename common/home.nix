@@ -4,7 +4,7 @@
   programs.home-manager.enable = true;
   home.username = "micky";
   home.homeDirectory = "/Users/micky";
-  home.stateVersion = "25.05";
+  home.stateVersion = "25.11";
 
   home.activation = {
     generateSSHKey = lib.hm.dag.entryAfter ["writeBoundary"] ''
@@ -45,29 +45,40 @@
 
   programs.ssh = {
     enable = true;
+    enableDefaultConfig = false;
     matchBlocks = {
       "github.com" = {
         identityFile = "~/.ssh/github";
       };
-      MichaelReubenDevSlalom = {
-        identityFile = "~/.ssh/MichaelReubenDevSlalom";
-        hostname = "github.com";
+      micky-mac-1 = {
+        identityFile = "~/.ssh/micky-mac-1";
+      };
+      "gitlab.com" = {
+        identityFile = "~/.ssh/gitlab";
+      };
+      lima-default = {
+        extraOptions = {
+          UserKnownHostsFile = "/dev/null";
+          StrictHostKeyChecking = "no";
+        };
       };
     };
   };
 
   programs.git = {
     enable = true;
-    userName = "MichaelReubenDev";
-    userEmail = "michael.reuben.mellor@gmail.com";
-    extraConfig = {
+    settings = {
+      user = {
+        name = "micky-devs";
+        email = "miester2001@hotmail.co.uk";
+      };
       init = {
         defaultBranch = "main";
       };
       push = {
         autoSetupRemote = true;
       };
-      core.pager = "cat";
+      core = { pager = "cat"; };
     };
   };
 
@@ -78,10 +89,11 @@
       tfp = "terraform plan";
       tfa = "terraform apply --auto-approve";
       k = "kubectl";
-      rebuild = "sudo nix run nix-darwin -- switch --flake ~/.config/nix";
+      rebuild = "sudo -H nix run nix-darwin -- switch --flake ~/.config/nix";
+      ahh = "echo ahhhh! cunt!";
     };
 
-    initExtra = ''
+    initContent = ''
       # Path
       export PATH=$PATH:/Users/micky/.local/bin
 
@@ -93,6 +105,8 @@
 
       export BUN_INSTALL="$HOME/.bun"
       export PATH="$BUN_INSTALL/bin:$PATH"
+
+      export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
     '';
 
     sessionVariables = {

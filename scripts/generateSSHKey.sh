@@ -1,7 +1,7 @@
 #!/bin/bash 
 
 # Create Key for remote connections
-hostname="$(hostname)"
+hostname="$(/bin/hostname)"
 if [[ ! -f ~/.ssh/$hostname ]]; then
   echo "No Remote SSH Key Present Generating one..."
   /usr/bin/ssh-keygen -t ed25519 -f ~/.ssh/$hostname -N ""
