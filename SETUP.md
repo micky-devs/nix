@@ -25,21 +25,28 @@ nix/
 
 ### Prerequisites
 
-1. Install Homebrew:
+1. Install the Xcode Command Line Tools (provides `git`, required by Homebrew and for cloning this repo):
+   ```bash
+   xcode-select --install
+   ```
+
+   A dialog will appear; follow the prompts to complete the installation. You can verify it succeeded with `xcode-select -p`.
+
+2. Install Homebrew:
    ```bash
    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
    ```
 
    Follow the post-installation instructions to add Homebrew to your PATH, then restart your terminal.
 
-2. Install Nix on the new machine:
+3. Install Nix on the new machine:
    ```bash
    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
    ```
 
    **IMPORTANT**: When asked "Install Determinate Nix?", answer **NO** to use the official NixOS Nix instead. Determinate Nix conflicts with nix-darwin installation.
 
-3. Ensure your hostname is correct:
+4. Ensure your hostname is correct:
    ```bash
    scutil --get ComputerName
    scutil --get LocalHostName
