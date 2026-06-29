@@ -25,16 +25,43 @@ nix/
 
 ### Prerequisites
 
-1. Install the Xcode Command Line Tools (provides `git`, required by Homebrew and for cloning this repo):
+1. Grant your terminal app Full Disk Access. The Nix installer (and nix-darwin activation) will fail without it.
+   - Go to **System Settings → Privacy & Security → Full Disk Access**.
+   - Enable it for your terminal app (e.g. **Terminal**).
+   - Quit and reopen the terminal so the change takes effect.
+
+   > Note: This can be disabled again once setup is complete and you are running Ghostty.
+
+2. Install the Xcode Command Line Tools (provides `git`, required by Homebrew and for cloning this repo):
    ```bash
    xcode-select --install
    ```
 
    A dialog will appear; follow the prompts to complete the installation. You can verify it succeeded with `xcode-select -p`.
 
-2. Install Homebrew:
+3. Install Homebrew:
    ```bash
    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+   ```
+
+   Follow the post-installation instructions to add Homebrew to your PATH, then restart your terminal.
+
+4. Install Nix on the new machine using the **official NixOS installer**:
+   ```bash
+   sh <(curl -L https://nixos.org/nix/install)
+   ```
+
+   **IMPORTANT**: Do **not** use the Determinate Systems installer (`install.determinate.systems`). It now installs Determinate Nix outright (the single `y/n` prompt installs Determinate Nix; answering `n` aborts), and Determinate Nix conflicts with nix-darwin. Use the official NixOS installer above instead.
+
+5. Ensure your hostname is correct:
+   ```bash
+   scutil --get ComputerName
+   scutil --get LocalHostName
+   ```
+   If needed, set it to `micky-mac-air`:
+   ```bash
+   sudo scutil --set ComputerName "micky-mac-air"
+   sudo scutil --set LocalHostName "micky-mac-air"
    ```
 
    Follow the post-installation instructions to add Homebrew to your PATH, then restart your terminal.
@@ -189,17 +216,17 @@ To keep both machines in sync:
 
 ### If You Accidentally Installed Determinate Nix
 
-If you installed Determinate Nix by mistake (answered "yes" to the Determinate Nix question), uninstall it first:
+The Determinate Systems installer (`install.determinate.systems`) now installs Determinate Nix from a single `y/n` prompt - there is no longer an option to select official NixOS Nix. Determinate Nix conflicts with nix-darwin, so if you installed it, uninstall it first:
 
 ```bash
 /nix/nix-installer uninstall
 ```
 
-Then reinstall with the official version:
+Then reinstall with the official NixOS installer:
 
 ```bash
-curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
+sh <(curl -L https://nixos.org/nix/install)
 ```
 
-Answer **NO** when asked about Determinate Nix.
+Verify you are on official Nix with `nix --version` (it should not mention "Determinate") and confirm `/nix/nix-installer` no longer exists.
 
