@@ -10,6 +10,7 @@
 
   programs.opencode = {
     enable = true;
+    enableMcpIntegration = true;
     settings = {
       theme = "tokyonight";
       autoshare = false;
@@ -18,6 +19,28 @@
         edit = "ask";
         bash = "ask";
         webfetch = "allow";
+      };
+      mcp = {
+        homeassistant = {
+          type = "remote";
+          url = "https://homeassistant.micky-net.com/api/mcp";
+          enabled = true;
+          headers = {
+            Authorization = "Bearer {env:HOMEASSISTANT_MCP_TOKEN}";
+          };
+        };
+        metabase-server = {
+          type = "local";
+          command = ["metabase-server"];
+        };
+        grafana = {
+          type = "local";
+          command = ["uvx" "mcp-grafana"];
+          environment = {
+            GRAFANA_URL = "https://grafana.micky-net.com";
+            GRAFANA_SERVICE_ACCOUNT_TOKEN = "{env:GITLAB_MCP_TOKEN}";
+          };
+        };
       };
     };
   };

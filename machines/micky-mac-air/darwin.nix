@@ -11,6 +11,7 @@
       "slack"
       "vlc"
       "genymotion"
+      "balenaetcher"
     ];
     taps = [
       "supabase/tap"

@@ -47,6 +47,9 @@
       "mullvad-vpn"
     ];
     brews = [
+      "tree-sitter-cli"
+      "just"
+      "direnv"
       "colima"
       "redis"
       "atmos"
@@ -82,9 +85,14 @@
       "lima"
       "socket_vmnet"
       "helmfile"
+      "iperf3"
+      "lazygit"
+      "direnv"
+      "k9s"
     ];
     onActivation = {
       cleanup = "zap";
+      extraFlags = [ "--force" ];
     };
   };
 

@@ -98,6 +98,7 @@
       export PATH=$PATH:/Users/micky/.local/bin
 
       eval "$(zoxide init zsh)"
+      eval "$(direnv hook zsh)"
 
       export NVM_DIR="$HOME/.nvm"
       [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"  # This loads nvm
