@@ -13,12 +13,18 @@
 # survives reboots, which makes it suitable as a boot-time dependency (e.g. the
 # Lima worker reads its config from the NAS).
 #
-# Implementation note: macOS (verified on 26.5.x) does NOT source an
-# auto_master.d directory — the only supported mechanism is a line in
-# /etc/auto_master referencing a map file. nix-darwin has no native autofs
-# module, so we manage both the map file and the /etc/auto_master entry
-# idempotently from an activation script rather than clobbering the
-# Apple-managed /etc/auto_master wholesale.
+# Implementation notes (verified on macOS 26.5.x):
+#   - There is no /etc/auto_master.d directory; the only supported mechanism is
+#     a line in /etc/auto_master referencing a map file.
+#   - A `/-` *direct* map into /Volumes does NOT work: `/` is a read-only system
+#     volume, so autofs cannot claim mountpoints there and reports
+#     "mountpoint unavailable" / "no mountpoints". We therefore use an
+#     *indirect* map mounted at /Volumes: the auto_master line is
+#     `/Volumes auto_nfs`, and each map key is a bare share name. autofs then
+#     creates /Volumes/<ShareName> on demand as a trigger and mounts onto it.
+#   - nix-darwin has no native autofs module, so we manage the map file and the
+#     /etc/auto_master entry idempotently from an activation script rather than
+#     clobbering the Apple-managed /etc/auto_master wholesale.
 #
 # NOTE: NFS access is gated by the export's allowed client list (currently
 # 192.168.4.0/24 in unas-nfsv4/install.sh). The Mac's IP must fall in that range
@@ -39,22 +45,22 @@ let
   #   rw,hard    — read-write, retry indefinitely on server hiccups.
   mountOpts = "rw,vers=4.1,resvport,hard";
 
-  mountPointFor = share: "/Volumes/${share}";
-
-  # autofs direct map (/-): one line per share. Format:
-  #   <mountpoint>  -<options>  <server>:<path>
+  # Indirect map: one line per share. The KEY is the bare share name (autofs
+  # prepends the /Volumes mountpoint from auto_master), then options, then the
+  # remote. Format:
+  #   <key>  -<options>  <server>:<path>
   autoNfsMapText =
     lib.concatMapStringsSep "\n"
       (share:
-        "${mountPointFor share}\t-fstype=nfs,${mountOpts}\t${nfsServer}:/${share}/.data")
+        "${share}\t-fstype=nfs,${mountOpts}\t${nfsServer}:/${share}/.data")
       shareNames
     + "\n";
 
-  # Marker-tagged line for /etc/auto_master. A leading `/-` declares a direct
-  # map, meaning each entry in the map specifies its own absolute mount point.
-  # The marker lets the activation script update the line idempotently.
+  # Marker-tagged indirect-map line for /etc/auto_master: mount the auto_nfs map
+  # at /Volumes so its keys become /Volumes/<ShareName>. The marker lets the
+  # activation script update the line idempotently.
   autoMasterMarker = "# managed-by-nix:unas-nfs";
-  autoMasterLine = "/-\t\t\t/etc/auto_nfs\t${autoMasterMarker}";
+  autoMasterLine = "/Volumes\t\t/etc/auto_nfs\t${autoMasterMarker}";
 in
 {
   # We manage /etc/auto_nfs and the /etc/auto_master entry together from the
@@ -63,12 +69,12 @@ in
   system.activationScripts.extraActivation.text = lib.mkAfter ''
     echo "[unas-nfs] configuring autofs NFS mounts..." >&2
 
-    # 1. Write the autofs direct map.
+    # 1. Write the autofs indirect map.
     cat > /etc/auto_nfs <<'UNAS_NFS_MAP_EOF'
 ${autoNfsMapText}UNAS_NFS_MAP_EOF
     chmod 644 /etc/auto_nfs
 
-    # 2. Register the direct map in /etc/auto_master idempotently: strip any
+    # 2. Register the indirect map in /etc/auto_master idempotently: strip any
     #    prior nix-managed line (matched by the marker), then append the current
     #    one. This preserves Apple's default entries and avoids duplicates.
     if /usr/bin/grep -q '${autoMasterMarker}' /etc/auto_master; then
