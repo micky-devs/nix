@@ -57,10 +57,11 @@ let
     + "\n";
 
   # Marker-tagged indirect-map line for /etc/auto_master: mount the auto_nfs map
-  # at /Volumes so its keys become /Volumes/<ShareName>. The marker lets the
-  # activation script update the line idempotently.
-  autoMasterMarker = "# managed-by-nix:unas-nfs";
-  autoMasterLine = "/Volumes\t\t/etc/auto_nfs\t${autoMasterMarker}";
+  # at /Volumes so its keys become /Volumes/<ShareName>. The marker (kept free of
+  # regex/sed-delimiter metacharacters) lets the activation script update the
+  # line idempotently.
+  autoMasterMarker = "managed-by-nix:unas-nfs";
+  autoMasterLine = "/Volumes\t\t/etc/auto_nfs\t# ${autoMasterMarker}";
 in
 {
   # We manage /etc/auto_nfs and the /etc/auto_master entry together from the
@@ -74,11 +75,14 @@ in
 ${autoNfsMapText}UNAS_NFS_MAP_EOF
     chmod 644 /etc/auto_nfs
 
-    # 2. Register the indirect map in /etc/auto_master idempotently: strip any
-    #    prior nix-managed line (matched by the marker), then append the current
-    #    one. This preserves Apple's default entries and avoids duplicates.
-    if /usr/bin/grep -q '${autoMasterMarker}' /etc/auto_master; then
-      /usr/bin/sed -i "" '\#${autoMasterMarker}#d' /etc/auto_master
+    # 2. Register the indirect map in /etc/auto_master idempotently: rewrite the
+    #    file without any prior nix-managed line (matched by the marker), then
+    #    append the current one. Using grep -v (rather than sed) avoids
+    #    delimiter/metacharacter pitfalls. This preserves Apple's default
+    #    entries and avoids duplicates on re-activation.
+    if /usr/bin/grep -qF '${autoMasterMarker}' /etc/auto_master; then
+      /usr/bin/grep -vF '${autoMasterMarker}' /etc/auto_master > /etc/auto_master.tmp
+      /bin/mv /etc/auto_master.tmp /etc/auto_master
     fi
     printf '%s\n' '${autoMasterLine}' >> /etc/auto_master
 
