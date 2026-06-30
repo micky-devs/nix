@@ -25,64 +25,44 @@ nix/
 
 ### Prerequisites
 
-1. Grant your terminal app Full Disk Access. The Nix installer (and nix-darwin activation) will fail without it.
+1. Ensure your hostname is correct (the flake selects the machine config by hostname, so set this first):
+   ```bash
+   scutil --get ComputerName
+   scutil --get LocalHostName
+   ```
+   If needed, set it to `micky-mac-air`:
+   ```bash
+   sudo scutil --set ComputerName "micky-mac-air"
+   sudo scutil --set LocalHostName "micky-mac-air"
+   ```
+
+2. Grant your terminal app Full Disk Access. The Nix installer (and nix-darwin activation) will fail without it.
    - Go to **System Settings → Privacy & Security → Full Disk Access**.
    - Enable it for your terminal app (e.g. **Terminal**).
    - Quit and reopen the terminal so the change takes effect.
 
    > Note: This can be disabled again once setup is complete and you are running Ghostty.
 
-2. Install the Xcode Command Line Tools (provides `git`, required by Homebrew and for cloning this repo):
+3. Install the Xcode Command Line Tools (provides `git`, required by Homebrew and for cloning this repo):
    ```bash
    xcode-select --install
    ```
 
    A dialog will appear; follow the prompts to complete the installation. You can verify it succeeded with `xcode-select -p`.
 
-3. Install Homebrew:
+4. Install Homebrew:
    ```bash
    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
    ```
 
    Follow the post-installation instructions to add Homebrew to your PATH, then restart your terminal.
 
-4. Install Nix on the new machine using the **official NixOS installer**:
+5. Install Nix on the new machine using the **official NixOS installer**:
    ```bash
    sh <(curl -L https://nixos.org/nix/install)
    ```
 
    **IMPORTANT**: Do **not** use the Determinate Systems installer (`install.determinate.systems`). It now installs Determinate Nix outright (the single `y/n` prompt installs Determinate Nix; answering `n` aborts), and Determinate Nix conflicts with nix-darwin. Use the official NixOS installer above instead.
-
-5. Ensure your hostname is correct:
-   ```bash
-   scutil --get ComputerName
-   scutil --get LocalHostName
-   ```
-   If needed, set it to `micky-mac-air`:
-   ```bash
-   sudo scutil --set ComputerName "micky-mac-air"
-   sudo scutil --set LocalHostName "micky-mac-air"
-   ```
-
-   Follow the post-installation instructions to add Homebrew to your PATH, then restart your terminal.
-
-3. Install Nix on the new machine:
-   ```bash
-   curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
-   ```
-
-   **IMPORTANT**: When asked "Install Determinate Nix?", answer **NO** to use the official NixOS Nix instead. Determinate Nix conflicts with nix-darwin installation.
-
-4. Ensure your hostname is correct:
-   ```bash
-   scutil --get ComputerName
-   scutil --get LocalHostName
-   ```
-   If needed, set it to `micky-mac-air`:
-   ```bash
-   sudo scutil --set ComputerName "micky-mac-air"
-   sudo scutil --set LocalHostName "micky-mac-air"
-   ```
 
 ### Installation Steps
 
