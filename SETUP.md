@@ -62,8 +62,6 @@ nix/
    sh <(curl -L https://nixos.org/nix/install)
    ```
 
-   **IMPORTANT**: Do **not** use the Determinate Systems installer (`install.determinate.systems`). It now installs Determinate Nix outright (the single `y/n` prompt installs Determinate Nix; answering `n` aborts), and Determinate Nix conflicts with nix-darwin. Use the official NixOS installer above instead.
-
 ### Installation Steps
 
 1. Clone/copy this nix configuration to the new machine:
@@ -86,8 +84,10 @@ nix/
 
 3. Install nix-darwin (the flake will automatically detect your hostname):
    ```bash
-   nix run nix-darwin -- switch --flake ~/.config/nix
+   nix run nix-darwin --extra-experimental-features "nix-command flakes" -- switch --flake ~/.config/nix
    ```
+
+   > Note: The `--extra-experimental-features "nix-command flakes"` flag is only needed for this **first** run on a fresh Nix install. The config enables these features permanently (`nix.settings.experimental-features` in `common/darwin.nix`), so subsequent rebuilds don't need the flag.
 
 4. After the initial setup, you can use the rebuild alias:
    ```bash
@@ -191,22 +191,4 @@ To keep both machines in sync:
    machines = [ "micky-mac-1" "micky-mac-air" "new-hostname" ];
    ```
 4. Run the same installation command on the new machine - it will automatically detect the hostname and apply the correct configuration
-
-## Troubleshooting Installation Issues
-
-### If You Accidentally Installed Determinate Nix
-
-The Determinate Systems installer (`install.determinate.systems`) now installs Determinate Nix from a single `y/n` prompt - there is no longer an option to select official NixOS Nix. Determinate Nix conflicts with nix-darwin, so if you installed it, uninstall it first:
-
-```bash
-/nix/nix-installer uninstall
-```
-
-Then reinstall with the official NixOS installer:
-
-```bash
-sh <(curl -L https://nixos.org/nix/install)
-```
-
-Verify you are on official Nix with `nix --version` (it should not mention "Determinate") and confirm `/nix/nix-installer` no longer exists.
 
