@@ -28,9 +28,6 @@
   # Homebrew
   homebrew = {
     enable = true;
-    taps = [
-      "fluxcd/tap"
-    ];
     casks = [
       "ghostty"
       "google-chrome"
@@ -66,7 +63,6 @@
       "docker"
       "docker-buildx"
       "docker-compose"
-      "fluxcd/tap/flux"
       "zstd"
       "gomplate"
       "yq"

@@ -11,29 +11,29 @@ nix/
 │   ├── darwin.nix              # Shared system packages & settings
 │   └── home.nix                # Shared home-manager config
 ├── machines/
-│   ├── micky-mac-1/            # Machine-specific configs
+│   ├── machine-name/           # Machine-specific configs (one dir per machine)
 │   │   ├── darwin.nix
 │   │   └── home.nix
-│   └── micky-mac-air/          # Machine-specific configs
-│       ├── darwin.nix
-│       └── home.nix
+│   └── ...
 ├── scripts/                     # Setup scripts
 └── configs/                     # Additional config files
 ```
 
-## Setting Up a New Machine (micky-mac-air)
+> Each directory under `machines/` is named after a machine's hostname. The hostname you set on a machine **must match** its directory name here (and the entry in the `machines` list in `flake.nix`), as the flake selects the config by hostname.
+
+## Setting Up a New Machine
 
 ### Prerequisites
 
-1. Ensure your hostname is correct (the flake selects the machine config by hostname, so set this first):
+1. Ensure your hostname is correct (the flake selects the machine config by hostname, so set this first). It **must match** the machine's directory name under `machines/` and its entry in the `machines` list in `flake.nix`:
    ```bash
    scutil --get ComputerName
    scutil --get LocalHostName
    ```
-   If needed, set it to `micky-mac-air`:
+   If needed, set it (replace `machine-name` with this machine's name):
    ```bash
-   sudo scutil --set ComputerName "micky-mac-air"
-   sudo scutil --set LocalHostName "micky-mac-air"
+   sudo scutil --set ComputerName "machine-name"
+   sudo scutil --set LocalHostName "machine-name"
    ```
 
 2. Grant your terminal app Full Disk Access. The Nix installer (and nix-darwin activation) will fail without it.
@@ -64,27 +64,24 @@ nix/
 
 ### Installation Steps
 
-1. Clone/copy this nix configuration to the new machine:
+1. Clone this nix configuration to the new machine:
    ```bash
    mkdir -p ~/.config
-   # Option 1: Clone from git (if you have it in a repo)
    cd ~/.config
    git clone <your-repo-url> nix
-
-   # Option 2: Copy via rsync/scp from your other machine
-   # On micky-mac-1:
-   rsync -av ~/.config/nix/ micky-mac-air:~/.config/nix/
    ```
 
-2. Back up the default macOS shell configuration files:
+2. Back up the default macOS shell configuration files (nix-darwin will replace these; it fails if they already exist):
    ```bash
    sudo mv /etc/zshrc /etc/zshrc.before-nix-darwin
    sudo mv /etc/zprofile /etc/zprofile.before-nix-darwin
+   sudo mv /etc/bashrc /etc/bashrc.before-nix-darwin
+   sudo mv /etc/bash_profile /etc/bash_profile.before-nix-darwin
    ```
 
-3. Install nix-darwin (the flake will automatically detect your hostname):
+3. Install nix-darwin (the flake will automatically detect your hostname). This must be run with `sudo`:
    ```bash
-   nix run nix-darwin --extra-experimental-features "nix-command flakes" -- switch --flake ~/.config/nix
+   sudo nix run nix-darwin --extra-experimental-features "nix-command flakes" -- switch --flake ~/.config/nix
    ```
 
    > Note: The `--extra-experimental-features "nix-command flakes"` flag is only needed for this **first** run on a fresh Nix install. The config enables these features permanently (`nix.settings.experimental-features` in `common/darwin.nix`), so subsequent rebuilds don't need the flag.
@@ -93,16 +90,6 @@ nix/
    ```bash
    rebuild
    ```
-
-### First Machine Setup (Already Done)
-
-For reference, here's how micky-mac-1 was set up:
-
-```bash
-nix run nix-darwin -- switch --flake ~/.config/nix
-```
-
-The flake automatically detects the hostname and applies the correct configuration. Then use the `rebuild` alias for future updates.
 
 ## Making Changes
 
@@ -126,7 +113,7 @@ rebuild
 
 ### Adding a Package to a Specific Machine
 
-Edit the machine-specific file, e.g., `machines/micky-mac-air/darwin.nix`:
+Edit the machine-specific file, e.g., `machines/machine-name/darwin.nix`:
 
 ```nix
 { pkgs, ... }: {
@@ -169,26 +156,26 @@ rebuild
 
 The configuration automatically runs `generateSSHKey.sh` on activation. Ensure this script exists in `scripts/` directory.
 
-## Updating Both Machines
+## Keeping Machines in Sync
 
-To keep both machines in sync:
+To keep machines in sync:
 
 1. Make changes on one machine
-2. Commit and push to git (or rsync to the other machine)
-3. On the other machine, pull changes and rebuild:
+2. Commit and push to git
+3. On the other machine(s), pull changes and rebuild:
    ```bash
    cd ~/.config/nix
    git pull
    rebuild
    ```
 
-## Adding a Third Machine
+## Adding Another Machine
 
-1. Create a new directory: `machines/new-hostname/`
+1. Create a new directory: `machines/machine-name/`
 2. Copy the darwin.nix and home.nix from an existing machine (they can be mostly empty)
 3. Add the hostname to the `machines` list in `flake.nix`:
    ```nix
-   machines = [ "micky-mac-1" "micky-mac-air" "new-hostname" ];
+   machines = [ "machine-name" "another-machine-name" ];
    ```
 4. Run the same installation command on the new machine - it will automatically detect the hostname and apply the correct configuration
 
