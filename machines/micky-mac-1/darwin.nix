@@ -6,5 +6,9 @@
     ../../common/darwin.nix
   ];
 
-  # Add machine-specific system packages, homebrew casks, or settings here if needed
+  homebrew = {
+    casks = [
+      "plex"
+    ];
+  };
 }

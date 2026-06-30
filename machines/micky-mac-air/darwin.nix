@@ -12,10 +12,15 @@
       "vlc"
       "genymotion"
       "balenaetcher"
+      "raspberry-pi-imager"
+      "thunderbird"
+      "obsidian"
+      "whatsapp"
+      "spotify"
+      "tor-browser"
+      "mullvad-vpn"
     ];
     taps = [
-      "supabase/tap"
-      "minio/stable"
       "oven-sh/bun"
       "pulumi/tap"
     ];
@@ -23,14 +28,10 @@
       "opencode"
       "qemu"
       "posting"
-      "supabase/tap/supabase"
       "libpq"
-      "minio/stable/mc"
       "oven-sh/bun/bun"
-      "doppler"
       "pulumi"
       "pulumi/tap/crd2pulumi"
     ];
   };
-  # Add machine-specific system packages, homebrew casks, or settings here if needed
 }
