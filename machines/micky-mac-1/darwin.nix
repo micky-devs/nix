@@ -9,7 +9,7 @@
 
   homebrew = {
     casks = [
-      "plex"
+      "plex-media-server"
     ];
   };
 }
