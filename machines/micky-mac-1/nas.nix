@@ -4,10 +4,10 @@
 #
 # The cluster's nfsv4-pseudoroot service (see homelab/unas-nfsv4) exposes the
 # shares under an NFSv4 pseudo-root, so paths are root-relative: a share called
-# "Media" is mounted from `unas.home:/Media/.data`. All client identities are
-# squashed server-side (all_squash), so macOS doesn't need to match UID/GID —
-# files simply appear owned by the squash identity, which is fine for browsing
-# and reading config files.
+# "Media" is mounted from `unas.home:/Media/.data` to `/Volumes/Media`. All
+# client identities are squashed server-side (all_squash), so macOS doesn't need
+# to match UID/GID — files appear owned by the squash identity, which is fine
+# for browsing and reading config files.
 #
 # autofs mounts on-demand the first time the mount point is accessed and
 # survives reboots, which makes it suitable as a boot-time dependency (e.g. the
@@ -27,48 +27,58 @@
 let
   nfsServer = "unas.home";
 
-  # Shares to expose, mapped to their /Volumes mount point. Keep in sync with
-  # `shares` in homelab/src/components/unas.ts.
-  shares = {
-    "Homelab" = "/Volumes/homelab";
-    "Media" = "/Volumes/media";
-    "Photos" = "/Volumes/photos";
-  };
+  # Share names exactly as exported by the UNAS (capitalised). Each is mounted at
+  # /Volumes/<ShareName>. Keep in sync with `shares` in
+  # homelab/src/components/unas.ts.
+  shareNames = [ "Homelab" "Media" "Photos" ];
 
-  # macOS NFSv4.1 client options:
+  # macOS NFSv4.1 client options (verified working via a manual mount):
   #   vers=4.1   — match the cluster (and the pseudo-root namespace).
-  #   resvport   — macOS uses non-reserved source ports by default, which many
-  #                NFS servers reject; this forces a reserved (<1024) port.
+  #   resvport   — macOS uses non-reserved source ports by default, which the
+  #                UNAS rejects; this forces a reserved (<1024) port.
   #   rw,hard    — read-write, retry indefinitely on server hiccups.
   mountOpts = "rw,vers=4.1,resvport,hard";
 
+  mountPointFor = share: "/Volumes/${share}";
+
   # autofs direct map (/-): one line per share. Format:
   #   <mountpoint>  -<options>  <server>:<path>
-  autoNfsMap = pkgs.writeText "auto_nfs" (
-    lib.concatStringsSep "\n" (
-      lib.mapAttrsToList
-        (share: mountPoint:
-          "${mountPoint}\t-fstype=nfs,${mountOpts}\t${nfsServer}:/${share}/.data")
-        shares
-    ) + "\n"
-  );
+  autoNfsMapText =
+    lib.concatMapStringsSep "\n"
+      (share:
+        "${mountPointFor share}\t-fstype=nfs,${mountOpts}\t${nfsServer}:/${share}/.data")
+      shareNames
+    + "\n";
 
-  # The line we add to /etc/auto_master. A leading `/-` declares a direct map,
-  # meaning each entry in the map specifies its own absolute mount point.
-  autoMasterLine = "/-\t\t\t/etc/auto_nfs\t-nobrowse";
+  # Marker-tagged line for /etc/auto_master. A leading `/-` declares a direct
+  # map, meaning each entry in the map specifies its own absolute mount point.
+  # The marker lets the activation script update the line idempotently.
+  autoMasterMarker = "# managed-by-nix:unas-nfs";
+  autoMasterLine = "/-\t\t\t/etc/auto_nfs\t${autoMasterMarker}";
 in
 {
-  # Install the map file into /etc (nix-darwin manages /etc/auto_nfs).
-  environment.etc."auto_nfs".source = autoNfsMap;
-
-  # Idempotently register the direct map in /etc/auto_master and reload autofs.
-  # We append our line only if it isn't already present, so we don't disturb
-  # Apple's default entries or duplicate on repeated activations.
+  # We manage /etc/auto_nfs and the /etc/auto_master entry together from the
+  # activation script (rather than environment.etc) so the map file and its
+  # registration always stay in sync, and so automount is reloaded afterwards.
   system.activationScripts.extraActivation.text = lib.mkAfter ''
-    echo "Configuring autofs for UNAS NFS mounts..." >&2
-    if ! /usr/bin/grep -qF '/etc/auto_nfs' /etc/auto_master; then
-      printf '%s\n' '${autoMasterLine}' >> /etc/auto_master
+    echo "[unas-nfs] configuring autofs NFS mounts..." >&2
+
+    # 1. Write the autofs direct map.
+    cat > /etc/auto_nfs <<'UNAS_NFS_MAP_EOF'
+${autoNfsMapText}UNAS_NFS_MAP_EOF
+    chmod 644 /etc/auto_nfs
+
+    # 2. Register the direct map in /etc/auto_master idempotently: strip any
+    #    prior nix-managed line (matched by the marker), then append the current
+    #    one. This preserves Apple's default entries and avoids duplicates.
+    if /usr/bin/grep -q '${autoMasterMarker}' /etc/auto_master; then
+      /usr/bin/sed -i "" '\#${autoMasterMarker}#d' /etc/auto_master
     fi
-    /usr/sbin/automount -vc || true
+    printf '%s\n' '${autoMasterLine}' >> /etc/auto_master
+
+    # 3. Reload autofs so the new map takes effect without a reboot. Mounts are
+    #    on-demand: accessing /Volumes/Media (etc.) triggers the actual mount.
+    /usr/sbin/automount -vc >&2 || true
+    echo "[unas-nfs] done — access /Volumes/Media to trigger a mount." >&2
   '';
 }
