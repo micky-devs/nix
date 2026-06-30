@@ -94,6 +94,9 @@
     };
 
     initContent = ''
+      # Homebrew: put brew + all brew-installed tools on PATH (must come first)
+      eval "$(/opt/homebrew/bin/brew shellenv)"
+
       # Path
       export PATH=$PATH:/Users/micky/.local/bin
 
