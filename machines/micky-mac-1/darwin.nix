@@ -4,6 +4,7 @@
 
   imports = [
     ../../common/darwin.nix
+    ./nas.nix
   ];
 
   homebrew = {
