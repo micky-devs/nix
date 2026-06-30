@@ -69,7 +69,6 @@
       "socket_vmnet"
       "iperf3"
       "lazygit"
-      "direnv"
       "k9s"
     ];
     onActivation = {
