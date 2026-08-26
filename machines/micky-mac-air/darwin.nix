@@ -24,5 +24,10 @@
       "oven-sh/bun"
       "pulumi/tap"
     ];
+    brews = [
+      "oven-sh/bun/bun"
+      "pulumi"
+      "pulumi/tap/crd2pulumi"
+    ];
   };
 }
