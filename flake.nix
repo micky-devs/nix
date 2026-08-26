@@ -15,25 +15,43 @@
 
   outputs = { self, nixpkgs, darwin, home-manager }:
     let
-      # Helper function to create a darwin configuration for a given hostname
-      mkDarwinConfig = hostname: darwin.lib.darwinSystem {
-        system = "aarch64-darwin";
-        modules = [
-          ./machines/${hostname}/darwin.nix
-          home-manager.darwinModules.home-manager
-          {
-            home-manager.useGlobalPkgs = true;
-            home-manager.useUserPackages = true;
-            home-manager.users.micky = import ./machines/${hostname}/home.nix;
-          }
-        ];
-      };
+      loadSecrets = hostname:
+        let machineSecrets = ./machines/${hostname}/secrets.nix;
+        in if builtins.pathExists machineSecrets
+        then import machineSecrets
+        else import ./secrets.example.nix;
 
-      # List of all your machines
-      machines = [ "micky-mac-1" "micky-mac-air" ];
+      mkDarwinConfig = hostname:
+        let secrets = loadSecrets hostname;
+        in darwin.lib.darwinSystem {
+          system = "aarch64-darwin";
+          specialArgs = { inherit secrets hostname; };
+          modules = [
+            ./machines/${hostname}/darwin.nix
+            home-manager.darwinModules.home-manager
+            {
+              home-manager.useGlobalPkgs = true;
+              home-manager.useUserPackages = true;
+              home-manager.extraSpecialArgs = { inherit secrets hostname; };
+              home-manager.users.${secrets.username} = import ./machines/${hostname}/home.nix;
+            }
+          ];
+        };
+
+      machines = [
+        "micky-mac-1"
+        "micky-mac-air"
+        "micky-mac-slalom"
+      ];
+
+      # Real hostname -> friendly directory name under ./machines.
+      hostAliases = {
+        "m73292224" = "micky-mac-slalom";
+      };
     in
     {
-      # Generate configurations for all machines
-      darwinConfigurations = nixpkgs.lib.genAttrs machines mkDarwinConfig;
+      darwinConfigurations =
+        nixpkgs.lib.genAttrs machines mkDarwinConfig
+        // nixpkgs.lib.mapAttrs (_: mkDarwinConfig) hostAliases;
     };
 }

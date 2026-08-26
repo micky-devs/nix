@@ -1,9 +1,9 @@
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, secrets, ... }:
 
 {
   programs.home-manager.enable = true;
-  home.username = "micky";
-  home.homeDirectory = "/Users/micky";
+  home.username = secrets.username;
+  home.homeDirectory = "/Users/${secrets.username}";
   home.stateVersion = "25.11";
 
   home.activation = {
@@ -31,16 +31,6 @@
 
   programs.awscli = {
     enable = true;
-    settings = {
-      default = {
-        region = "eu-west-2";
-        sso_region = "eu-west-1";
-        sso_account_id = "575324938096";
-        sso_role_name = "AdministratorAccess";
-        cli_pager="jq";
-        sso_start_url = "https://d-936776dfd6.awsapps.com/start";
-      };
-    };
   };
 
   programs.ssh = {
@@ -49,12 +39,6 @@
     matchBlocks = {
       "github.com" = {
         identityFile = "~/.ssh/github";
-      };
-      micky-mac-1 = {
-        identityFile = "~/.ssh/micky-mac-1";
-      };
-      "gitlab.com" = {
-        identityFile = "~/.ssh/gitlab";
       };
       lima-default = {
         extraOptions = {
@@ -68,10 +52,7 @@
   programs.git = {
     enable = true;
     settings = {
-      user = {
-        name = "micky-devs";
-        email = "miester2001@hotmail.co.uk";
-      };
+      user = secrets.gitUser;
       init = {
         defaultBranch = "main";
       };
@@ -79,6 +60,21 @@
         autoSetupRemote = true;
       };
       core = { pager = "cat"; };
+    };
+  };
+
+  programs.opencode = {
+    enable = true;
+    enableMcpIntegration = true;
+    settings = {
+      theme = "tokyonight";
+      autoshare = false;
+      autoupdate = true;
+      permission = {
+        edit = "ask";
+        bash = "ask";
+        webfetch = "allow";
+      };
     };
   };
 
@@ -90,7 +86,6 @@
       tfa = "terraform apply --auto-approve";
       k = "kubectl";
       rebuild = "sudo -H nix run nix-darwin -- switch --flake ~/.config/nix";
-      ahh = "echo ahhhh! cunt!";
     };
 
     initContent = ''
@@ -98,7 +93,7 @@
       eval "$(/opt/homebrew/bin/brew shellenv)"
 
       # Path
-      export PATH=$PATH:/Users/micky/.local/bin
+      export PATH=$PATH:$HOME/.local/bin
 
       eval "$(zoxide init zsh)"
       eval "$(direnv hook zsh)"

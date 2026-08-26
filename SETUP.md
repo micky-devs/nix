@@ -7,19 +7,41 @@ This configuration supports multiple macOS machines using nix-darwin and home-ma
 ```
 nix/
 ├── flake.nix                    # Main flake configuration
+├── secrets.example.nix          # Template for per-machine secrets (committed)
 ├── common/
 │   ├── darwin.nix              # Shared system packages & settings
 │   └── home.nix                # Shared home-manager config
 ├── machines/
 │   ├── machine-name/           # Machine-specific configs (one dir per machine)
 │   │   ├── darwin.nix
-│   │   └── home.nix
+│   │   ├── home.nix
+│   │   └── secrets.nix         # Machine-specific secrets (gitignored)
 │   └── ...
-├── scripts/                     # Setup scripts
-└── configs/                     # Additional config files
+└── scripts/                     # Setup scripts
 ```
 
 > Each directory under `machines/` is named after a machine's hostname. The hostname you set on a machine **must match** its directory name here (and the entry in the `machines` list in `flake.nix`), as the flake selects the config by hostname.
+>
+> If you can't (or don't want to) change a machine's real hostname — e.g. a work laptop with an auto-generated name like `m73292224` — add it to the `hostAliases` map in `flake.nix` instead: `"m73292224" = "micky-mac-slalom";`. The flake registers the config under both the friendly directory name and the real hostname, so auto-detection and `rebuild` keep working without renaming anything.
+
+## Secrets and Per-Machine Values
+
+Sensitive and machine-specific values (macOS username, git identity, AWS accounts, private hostnames) live in a per-machine `secrets.nix` file. These files are **gitignored** and never committed.
+
+`secrets.example.nix` (committed) documents the expected shape. Each machine's `secrets.nix` returns an attribute set that the flake reads and passes to the config as `secrets`. Files reference specific values, e.g. `secrets.username`, `secrets.gitUser`, `secrets.awsProfiles`.
+
+When building, Nix only evaluates the current machine's configuration, so a machine only needs **its own** `secrets.nix`. Other machines in the `machines` list fall back to `secrets.example.nix` during whole-flake commands (e.g. `nix flake check`), so evaluation never fails.
+
+To set up secrets on a machine:
+
+```bash
+cp secrets.example.nix machines/<hostname>/secrets.nix
+# then edit machines/<hostname>/secrets.nix with the real values
+```
+
+At minimum a machine's `secrets.nix` must define `username` and `gitUser`. Add `awsProfiles` and `mcp` only if that machine's `home.nix` references them.
+
+> The `flake.lock` file **is** committed intentionally. It pins the exact `nixpkgs`/`darwin`/`home-manager` revisions so every machine resolves to identical package versions — this is what keeps environments consistent across devices. Update it deliberately with `nix flake update` and commit the result. Do not gitignore it.
 
 ## Setting Up a New Machine
 
@@ -71,7 +93,14 @@ nix/
    git clone <your-repo-url> nix
    ```
 
-2. Back up the default macOS shell configuration files (nix-darwin will replace these; it fails if they already exist):
+2. Create this machine's secrets file (it is gitignored, so it must be created on each machine). At minimum set `username` (must match your macOS username) and `gitUser`:
+   ```bash
+   cd ~/.config/nix
+   cp secrets.example.nix machines/<hostname>/secrets.nix
+   # edit machines/<hostname>/secrets.nix with the real values
+   ```
+
+3. Back up the default macOS shell configuration files (nix-darwin will replace these; it fails if they already exist):
    ```bash
    sudo mv /etc/zshrc /etc/zshrc.before-nix-darwin
    sudo mv /etc/zprofile /etc/zprofile.before-nix-darwin
@@ -79,14 +108,14 @@ nix/
    sudo mv /etc/bash_profile /etc/bash_profile.before-nix-darwin
    ```
 
-3. Install nix-darwin (the flake will automatically detect your hostname). This must be run with `sudo`:
+4. Install nix-darwin (the flake will automatically detect your hostname). This must be run with `sudo`:
    ```bash
    sudo nix run nix-darwin --extra-experimental-features "nix-command flakes" -- switch --flake ~/.config/nix
    ```
 
    > Note: The `--extra-experimental-features "nix-command flakes"` flag is only needed for this **first** run on a fresh Nix install. The config enables these features permanently (`nix.settings.experimental-features` in `common/darwin.nix`), so subsequent rebuilds don't need the flag.
 
-4. After the initial setup, you can use the rebuild alias:
+5. After the initial setup, you can use the rebuild alias:
    ```bash
    rebuild
    ```
@@ -133,12 +162,13 @@ Edit the machine-specific file, e.g., `machines/machine-name/darwin.nix`:
 - **System packages & Homebrew**: `common/darwin.nix`
 - **User packages & programs**: `common/home.nix`
 - **Machine-specific overrides**: `machines/<hostname>/darwin.nix` or `machines/<hostname>/home.nix`
+- **Secrets / per-machine values**: `machines/<hostname>/secrets.nix` (gitignored)
 
 ## Troubleshooting
 
 ### Flake Lock Issues
 
-If you get flake lock errors:
+The `flake.lock` is committed and shared by all machines. Only update it deliberately, then commit the result so other machines pick up the same versions:
 ```bash
 cd ~/.config/nix
 nix flake update
@@ -177,5 +207,10 @@ To keep machines in sync:
    ```nix
    machines = [ "machine-name" "another-machine-name" ];
    ```
-4. Run the same installation command on the new machine - it will automatically detect the hostname and apply the correct configuration
+4. On the new machine, create its `secrets.nix` (see [Secrets and Per-Machine Values](#secrets-and-per-machine-values)):
+   ```bash
+   cp secrets.example.nix machines/machine-name/secrets.nix
+   # edit with the real values; only include awsProfiles/mcp if that machine's home.nix uses them
+   ```
+5. Run the same installation command on the new machine - it will automatically detect the hostname and apply the correct configuration
 

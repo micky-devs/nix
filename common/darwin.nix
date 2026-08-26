@@ -1,7 +1,7 @@
-{ pkgs, ... }: {
+{ pkgs, secrets, ... }: {
   nixpkgs.config.allowUnfree = true;
   system.stateVersion = 6;
-  system.primaryUser = "micky";
+  system.primaryUser = secrets.username;
 
   # Disable natural scrolling
   system.defaults.NSGlobalDomain."com.apple.swipescrolldirection" = false;
@@ -32,35 +32,36 @@
       "ghostty"
       "google-chrome"
       "jumpcut"
+      "handy"
     ];
     brews = [
+      "opencode"
+      "qemu"
+      "posting"
+      "libpq"
+      "oven-sh/bun/bun"
+      "pulumi"
+      "pulumi/tap/crd2pulumi"
       "tree-sitter-cli"
       "just"
       "direnv"
       "colima"
-      "redis"
-      "atmos"
       "nvm"
       "asitop"
       "go"
-      "pipx"
       "neovim"
       "fzf"
       "tmux"
       "rg"
-      "minikube"
       "helm"
       "docker"
       "docker-buildx"
       "docker-compose"
       "zstd"
       "yq"
-      "gh"
       "ansible"
       "nmap"
-      "mosh"
       "pwgen"
-      "ruby"
       "sshpass"
       "wget"
       "uv"
@@ -68,6 +69,7 @@
       "lima"
       "socket_vmnet"
       "iperf3"
+      "fio"
       "lazygit"
       "k9s"
     ];
@@ -77,9 +79,9 @@
     };
   };
 
-  users.users.micky = {
-    name = "micky";
-    home = "/Users/micky";
+  users.users.${secrets.username} = {
+    name = secrets.username;
+    home = "/Users/${secrets.username}";
   };
 
   nix.settings = {

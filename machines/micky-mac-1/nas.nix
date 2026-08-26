@@ -6,7 +6,10 @@ let
   # Keep in sync with `shares` in homelab/src/components/unas.ts.
   shareNames = [ "Homelab" "Media" "Photos" ];
 
-  mountOpts = "rw,vers=4.1,resvport,hard";
+  # soft+intr+timeo/retrans so a stalled op fails instead of wedging the whole
+  # NFS connection (a `hard` mount hangs indefinitely under write stalls).
+  # rsize/wsize=1MiB to use the full 2.5GbE link (macOS defaults are too small).
+  mountOpts = "rw,vers=4.1,resvport,soft,intr,timeo=30,retrans=3,rsize=1048576,wsize=1048576";
 
   # The `..` indirection resolves to /Volumes/<Share> but isn't literally
   # "/Volumes/...", which is what lets macOS autofs claim the mountpoint.

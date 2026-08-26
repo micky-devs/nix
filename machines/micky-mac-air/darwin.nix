@@ -24,14 +24,5 @@
       "oven-sh/bun"
       "pulumi/tap"
     ];
-    brews = [
-      "opencode"
-      "qemu"
-      "posting"
-      "libpq"
-      "oven-sh/bun/bun"
-      "pulumi"
-      "pulumi/tap/crd2pulumi"
-    ];
   };
 }

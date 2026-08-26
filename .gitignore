@@ -1,1 +1,5 @@
 **/.DS_Store
+
+# Machine-specific secrets. Keep secrets.example.nix tracked as the template.
+secrets.nix
+machines/*/secrets.nix
